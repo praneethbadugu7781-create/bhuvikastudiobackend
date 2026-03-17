@@ -30,7 +30,15 @@ export async function getAll(_req, res, next) {
 export async function create(req, res, next) {
   try {
     const { address, paymentMethod, items } = req.body;
-    const userId = req.user.userId;
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Please login to place an order' });
+    }
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({ error: 'Cart is empty' });
+    }
 
     // Resolve products and build order items
     const orderItems = [];
@@ -42,22 +50,29 @@ export async function create(req, res, next) {
         return res.status(400).json({ error: `Product not found: ${item.slug}` });
       }
 
-      // Find matching variant by size
-      const variant = product.variants.find(v =>
-        v.size.toLowerCase() === item.size.toLowerCase()
-      );
+      // Find matching variant by size (handle missing variants/size gracefully)
+      let variant = null;
+      if (product.variants && product.variants.length > 0 && item.size) {
+        variant = product.variants.find(v =>
+          v.size && item.size && v.size.toLowerCase() === item.size.toLowerCase()
+        );
+        // If no exact match, use first variant as fallback
+        if (!variant) {
+          variant = product.variants[0];
+        }
+      }
 
       const unitPrice = variant ? (variant.salePrice || variant.price) : 0;
-      const totalPrice = unitPrice * item.qty;
+      const totalPrice = unitPrice * (item.qty || 1);
       subtotal += totalPrice;
 
       orderItems.push({
         productId: product._id,
-        variantId: variant ? variant._id.toString() : null,
+        variantId: variant?._id?.toString() || null,
         productName: product.name,
-        size: item.size,
-        color: variant ? variant.color : '',
-        quantity: item.qty,
+        size: item.size || (variant?.size) || 'Free Size',
+        color: variant?.color || '',
+        quantity: item.qty || 1,
         unitPrice,
         totalPrice,
       });
@@ -70,7 +85,7 @@ export async function create(req, res, next) {
     const order = await Order.create({
       userId,
       address,
-      paymentMethod,
+      paymentMethod: paymentMethod || 'COD',
       paymentStatus: 'PENDING',
       status: 'PENDING',
       subtotal,
@@ -84,7 +99,7 @@ export async function create(req, res, next) {
       try {
         const razorpay = getRazorpay();
         const rpOrder = await razorpay.orders.create({
-          amount: Math.round(totalAmount * 100), // Razorpay expects paise
+          amount: Math.round(totalAmount * 100),
           currency: 'INR',
           receipt: order._id.toString(),
         });
@@ -92,7 +107,6 @@ export async function create(req, res, next) {
         order.razorpayOrderId = rpOrder.id;
         await order.save();
       } catch (rpErr) {
-        // If Razorpay fails, still return the order but without razorpayOrderId
         console.error('Razorpay order creation failed:', rpErr.message);
       }
     }
