@@ -1,18 +1,28 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+let transporter = null;
+
+function getTransporter() {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+  }
+  return transporter;
+}
 
 export async function sendOtpEmail(email, code) {
   const from = process.env.GMAIL_USER;
   if (!from) throw new Error('GMAIL_USER not configured');
+  if (!process.env.GMAIL_APP_PASSWORD) throw new Error('GMAIL_APP_PASSWORD not configured');
 
-  await transporter.sendMail({
+  const transport = getTransporter();
+
+  const info = await transport.sendMail({
     from: `Bhuvika Studio <${from}>`,
     to: email,
     subject: 'Your Bhuvika Studio Login Code',
@@ -27,4 +37,7 @@ export async function sendOtpEmail(email, code) {
       </div>
     `,
   });
+
+  console.log('OTP email sent to:', email, 'messageId:', info.messageId);
+  return info;
 }
