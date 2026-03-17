@@ -9,7 +9,9 @@ export async function connectDB() {
     mongoose.set('toJSON', {
       virtuals: true,
       transform: (_doc, ret) => {
-        ret.id = ret._id.toString();
+        if (ret._id) {
+          ret.id = ret._id.toString();
+        }
         delete ret.__v;
         return ret;
       },
