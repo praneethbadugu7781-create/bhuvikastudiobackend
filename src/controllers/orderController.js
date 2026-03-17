@@ -1,6 +1,7 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import { getRazorpay } from '../utils/razorpay.js';
+import { sendOrderStatusEmail } from '../utils/sendEmail.js';
 
 const FREE_DELIVERY_THRESHOLD = 2000;
 const DELIVERY_CHARGE = 80;
@@ -122,6 +123,11 @@ export async function update(req, res, next) {
   try {
     const { status, paymentStatus, adminNote } = req.body;
 
+    // Get the current order to check if status is changing
+    const currentOrder = await Order.findById(req.params.id).populate('userId', 'name email mobile');
+    if (!currentOrder) return res.status(404).json({ error: 'Order not found' });
+
+    const oldStatus = currentOrder.status;
     const updateData = {};
     if (status !== undefined) updateData.status = status;
     if (paymentStatus !== undefined) updateData.paymentStatus = paymentStatus;
@@ -133,7 +139,15 @@ export async function update(req, res, next) {
       { new: true, runValidators: true }
     ).populate('userId', 'name email mobile');
 
-    if (!order) return res.status(404).json({ error: 'Order not found' });
+    // Send email notification if status changed
+    if (status && status !== oldStatus) {
+      const customerEmail = order.userId?.email || order.address?.email;
+      if (customerEmail) {
+        sendOrderStatusEmail(customerEmail, order, status).catch(err => {
+          console.error('Failed to send order status email:', err.message);
+        });
+      }
+    }
 
     const obj = order.toJSON();
     obj.user = obj.userId;
