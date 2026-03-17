@@ -61,6 +61,9 @@ export async function verifyOtp(req, res, next) {
       });
     }
 
+    // Single session: delete all existing refresh tokens for this user
+    await RefreshToken.deleteMany({ userId: user._id });
+
     // Generate JWT tokens and set cookies
     await generateTokens(res, user);
 
