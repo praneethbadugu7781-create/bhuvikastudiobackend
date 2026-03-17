@@ -1,22 +1,18 @@
 export async function sendOtpEmail(email, code) {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) throw new Error('BREVO_API_KEY not configured');
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) throw new Error('RESEND_API_KEY not configured');
 
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+  const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      'accept': 'application/json',
-      'content-type': 'application/json',
-      'api-key': apiKey,
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      sender: {
-        name: 'Bhuvika Studio',
-        email: process.env.BREVO_FROM_EMAIL || 'noreply@bhuvikastudio.com',
-      },
-      to: [{ email }],
+      from: process.env.RESEND_FROM_EMAIL || 'Bhuvika Studio <otp@bhuvikastudio.com>',
+      to: [email],
       subject: 'Your Bhuvika Studio Login Code',
-      htmlContent: `
+      html: `
         <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#ffffff;">
           <div style="text-align:center;margin-bottom:24px;">
             <h1 style="color:#1a1a1a;font-size:24px;font-weight:600;margin:0;letter-spacing:4px;">BHUVIKA STUDIO</h1>
@@ -42,11 +38,11 @@ export async function sendOtpEmail(email, code) {
 
   if (!res.ok) {
     const body = await res.text();
-    console.error('Brevo API error:', body);
+    console.error('Resend API error:', body);
     throw new Error(`Email send failed: ${body}`);
   }
 
   const data = await res.json();
-  console.log('OTP email sent to:', email, 'messageId:', data.messageId);
+  console.log('OTP email sent to:', email, 'messageId:', data.id);
   return data;
 }
