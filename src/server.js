@@ -15,6 +15,11 @@ import customerRoutes from './routes/customers.js';
 import statsRoutes from './routes/stats.js';
 import paymentRoutes from './routes/payments.js';
 import uploadRoutes from './routes/upload.js';
+import settingsRoutes from './routes/settings.js';
+import couponRoutes from './routes/coupons.js';
+import bannerRoutes from './routes/banners.js';
+import reviewRoutes from './routes/reviews.js';
+import analyticsRoutes from './routes/analytics.js';
 
 dotenv.config();
 
@@ -40,6 +45,11 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/banners', bannerRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 handler
 app.use((_req, res) => {
