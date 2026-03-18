@@ -3,12 +3,7 @@ import Banner from '../models/Banner.js';
 // GET /api/banners (public - active only)
 export async function getActive(_req, res, next) {
   try {
-    const now = new Date();
-    const banners = await Banner.find({
-      isActive: true,
-      startDate: { $lte: now },
-      $or: [{ endDate: null }, { endDate: { $gte: now } }],
-    }).sort({ position: 1, displayOrder: 1 });
+    const banners = await Banner.find({ isActive: true }).sort({ position: 1, displayOrder: 1 });
     res.json(banners);
   } catch (err) {
     next(err);
