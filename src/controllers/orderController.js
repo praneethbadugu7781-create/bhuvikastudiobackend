@@ -1,11 +1,23 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Coupon from '../models/Coupon.js';
+import Settings from '../models/Settings.js';
 import { getRazorpay } from '../utils/razorpay.js';
 import { sendOrderStatusEmail } from '../utils/sendEmail.js';
 
-const FREE_DELIVERY_THRESHOLD = 2000;
-const DELIVERY_CHARGE = 80;
+// Default shipping settings (fallback if not configured)
+const DEFAULT_SHIPPING = {
+  freeThreshold: 2000,
+  defaultCharge: 80,
+  codEnabled: true,
+  codCharge: 0,
+};
+
+// Helper to get shipping settings from database
+async function getShippingSettings() {
+  const settings = await Settings.findOne({ key: 'shipping' });
+  return settings?.value || DEFAULT_SHIPPING;
+}
 
 // GET /api/orders (admin)
 export async function getAll(_req, res, next) {
@@ -80,7 +92,9 @@ export async function create(req, res, next) {
       });
     }
 
-    const deliveryCharge = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
+    // Get shipping settings from database
+    const shipping = await getShippingSettings();
+    const deliveryCharge = subtotal >= shipping.freeThreshold ? 0 : shipping.defaultCharge;
     const discount = couponDiscount || 0;
     const totalAmount = subtotal + deliveryCharge - discount;
 
