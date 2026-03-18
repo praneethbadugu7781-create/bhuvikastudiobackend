@@ -90,6 +90,7 @@ export async function validate(req, res, next) {
       code: coupon.code,
       type: coupon.type,
       value: coupon.value,
+      maxDiscount: coupon.maxDiscount,
       discount,
       description: coupon.description,
     });

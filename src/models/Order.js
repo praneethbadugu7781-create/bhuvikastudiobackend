@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const addressSnapshotSchema = new mongoose.Schema({
   fullName:   { type: String, required: true },
   phone:      { type: String, required: true },
+  email:      { type: String, default: null },
   line1:      { type: String, required: true },
   line2:      { type: String, default: null },
   city:       { type: String, required: true },
@@ -29,6 +30,8 @@ const orderSchema = new mongoose.Schema({
   paymentStatus:   { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
   status:          { type: String, enum: ['PENDING', 'CONFIRMED', 'PACKED', 'SHIPPED', 'DELIVERED', 'CANCELLED'], default: 'PENDING' },
   subtotal:        { type: Number, required: true },
+  couponCode:      { type: String, default: null },
+  couponDiscount:  { type: Number, default: 0 },
   deliveryCharge:  { type: Number, required: true },
   totalAmount:     { type: Number, required: true },
   paymentRef:      { type: String, default: null },

@@ -1,5 +1,6 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import Coupon from '../models/Coupon.js';
 import { getRazorpay } from '../utils/razorpay.js';
 import { sendOrderStatusEmail } from '../utils/sendEmail.js';
 
@@ -30,7 +31,7 @@ export async function getAll(_req, res, next) {
 // POST /api/orders (customer)
 export async function create(req, res, next) {
   try {
-    const { address, paymentMethod, items } = req.body;
+    const { address, paymentMethod, items, couponCode, couponDiscount } = req.body;
     const userId = req.user?.userId;
 
     if (!userId) {
@@ -80,7 +81,8 @@ export async function create(req, res, next) {
     }
 
     const deliveryCharge = subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_CHARGE;
-    const totalAmount = subtotal + deliveryCharge;
+    const discount = couponDiscount || 0;
+    const totalAmount = subtotal + deliveryCharge - discount;
 
     // Create order
     const order = await Order.create({
@@ -90,10 +92,20 @@ export async function create(req, res, next) {
       paymentStatus: 'PENDING',
       status: 'PENDING',
       subtotal,
+      couponCode: couponCode || null,
+      couponDiscount: discount,
       deliveryCharge,
       totalAmount,
       items: orderItems,
     });
+
+    // Increment coupon usage if coupon was used
+    if (couponCode) {
+      await Coupon.updateOne(
+        { code: couponCode.toUpperCase() },
+        { $inc: { usedCount: 1 } }
+      );
+    }
 
     // If Razorpay, create Razorpay order
     if (paymentMethod === 'RAZORPAY') {
