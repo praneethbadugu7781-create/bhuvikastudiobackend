@@ -1,10 +1,13 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import User from '../models/User.js';
 import Otp from '../models/Otp.js';
 import RefreshToken from '../models/RefreshToken.js';
 import { generateTokens, clearTokenCookies } from '../utils/generateTokens.js';
 import { sendOtpEmail } from '../utils/sendEmail.js';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -192,5 +195,67 @@ export async function refresh(req, res, next) {
     res.json({ success: true });
   } catch (err) {
     next(err);
+  }
+}
+
+// POST /api/auth/check-email - Check if email exists
+export async function checkEmail(req, res, next) {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    res.json({ exists: !!user, name: user?.name || null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/google - Google Sign-In
+export async function googleAuth(req, res, next) {
+  try {
+    const { credential } = req.body;
+
+    // Verify Google token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture } = payload;
+
+    // Find or create user
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        email,
+        name: name || null,
+        avatar: picture || null,
+        role: 'CUSTOMER',
+        googleId: payload.sub,
+      });
+    } else if (!user.googleId) {
+      // Link Google account to existing user
+      user.googleId = payload.sub;
+      if (!user.name && name) user.name = name;
+      if (!user.avatar && picture) user.avatar = picture;
+      await user.save();
+    }
+
+    // Single session: delete all existing refresh tokens
+    await RefreshToken.deleteMany({ userId: user._id });
+
+    // Generate JWT tokens
+    await generateTokens(res, user);
+
+    res.json({
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      mobile: user.mobile,
+      role: user.role,
+    });
+  } catch (err) {
+    console.error('Google auth error:', err);
+    res.status(401).json({ error: 'Google authentication failed' });
   }
 }
