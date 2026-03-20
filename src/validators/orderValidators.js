@@ -20,6 +20,8 @@ export const createOrderSchema = Joi.object({
     size: Joi.string().required(),
     qty: Joi.number().integer().min(1).required(),
   })).min(1).required(),
+  couponCode: Joi.string().allow(null, '').optional(),
+  couponDiscount: Joi.number().min(0).default(0),
 });
 
 export const updateOrderSchema = Joi.object({
