@@ -10,6 +10,9 @@ const router = Router();
 // Public: track order (no auth needed)
 router.get('/track/:id', ctrl.trackOrder);
 
+// Customer: get my orders
+router.get('/my-orders', authenticate, requireAuth, ctrl.getMyOrders);
+
 // Admin: all orders
 router.get('/', authenticate, requireAuth, requireAdmin, ctrl.getAll);
 

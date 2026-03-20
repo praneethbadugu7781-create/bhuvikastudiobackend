@@ -253,3 +253,27 @@ export async function trackOrder(req, res, next) {
     next(err);
   }
 }
+
+// GET /api/orders/my-orders (customer - get their own orders)
+export async function getMyOrders(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Please login to view orders' });
+    }
+
+    const orders = await Order.find({ userId })
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    res.json(orders.map(o => ({
+      _id: o._id,
+      status: o.status,
+      totalAmount: o.totalAmount,
+      createdAt: o.createdAt,
+      items: o.items.map(item => ({ productName: item.productName })),
+    })));
+  } catch (err) {
+    next(err);
+  }
+}
