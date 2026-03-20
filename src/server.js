@@ -20,6 +20,7 @@ import couponRoutes from './routes/coupons.js';
 import bannerRoutes from './routes/banners.js';
 import reviewRoutes from './routes/reviews.js';
 import analyticsRoutes from './routes/analytics.js';
+import addressRoutes from './routes/addresses.js';
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/addresses', addressRoutes);
 
 // 404 handler
 app.use((_req, res) => {
