@@ -3,7 +3,7 @@ import Address from '../models/Address.js';
 // GET /api/addresses - Get all addresses for logged-in user
 export async function getAll(req, res, next) {
   try {
-    const addresses = await Address.find({ userId: req.user._id }).sort({ isDefault: -1, createdAt: -1 });
+    const addresses = await Address.find({ userId: req.user.userId }).sort({ isDefault: -1, createdAt: -1 });
     res.json(addresses);
   } catch (err) {
     next(err);
@@ -16,11 +16,11 @@ export async function create(req, res, next) {
     const { fullName, phone, line1, line2, city, state, postalCode, isDefault } = req.body;
 
     // If this is the first address, make it default
-    const existingCount = await Address.countDocuments({ userId: req.user._id });
+    const existingCount = await Address.countDocuments({ userId: req.user.userId });
     const shouldBeDefault = existingCount === 0 ? true : isDefault;
 
     const address = await Address.create({
-      userId: req.user._id,
+      userId: req.user.userId,
       fullName,
       phone,
       line1,
@@ -43,7 +43,7 @@ export async function update(req, res, next) {
     const { id } = req.params;
     const { fullName, phone, line1, line2, city, state, postalCode, isDefault } = req.body;
 
-    const address = await Address.findOne({ _id: id, userId: req.user._id });
+    const address = await Address.findOne({ _id: id, userId: req.user.userId });
     if (!address) {
       return res.status(404).json({ error: 'Address not found' });
     }
@@ -68,7 +68,7 @@ export async function update(req, res, next) {
 export async function remove(req, res, next) {
   try {
     const { id } = req.params;
-    const address = await Address.findOneAndDelete({ _id: id, userId: req.user._id });
+    const address = await Address.findOneAndDelete({ _id: id, userId: req.user.userId });
 
     if (!address) {
       return res.status(404).json({ error: 'Address not found' });
@@ -76,7 +76,7 @@ export async function remove(req, res, next) {
 
     // If deleted address was default, make another one default
     if (address.isDefault) {
-      const nextAddress = await Address.findOne({ userId: req.user._id }).sort({ createdAt: -1 });
+      const nextAddress = await Address.findOne({ userId: req.user.userId }).sort({ createdAt: -1 });
       if (nextAddress) {
         nextAddress.isDefault = true;
         await nextAddress.save();
@@ -93,7 +93,7 @@ export async function remove(req, res, next) {
 export async function setDefault(req, res, next) {
   try {
     const { id } = req.params;
-    const address = await Address.findOne({ _id: id, userId: req.user._id });
+    const address = await Address.findOne({ _id: id, userId: req.user.userId });
 
     if (!address) {
       return res.status(404).json({ error: 'Address not found' });
