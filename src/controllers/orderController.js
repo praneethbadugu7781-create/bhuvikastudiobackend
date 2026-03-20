@@ -43,6 +43,9 @@ export async function getAll(_req, res, next) {
 // POST /api/orders (customer)
 export async function create(req, res, next) {
   try {
+    // Log full request body for debugging
+    console.log('Order creation - Full request body:', JSON.stringify(req.body, null, 2));
+
     const { address, paymentMethod, items, couponCode, couponDiscount } = req.body;
     const userId = req.user?.userId;
 
