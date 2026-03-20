@@ -46,6 +46,9 @@ export async function create(req, res, next) {
     const { address, paymentMethod, items, couponCode, couponDiscount } = req.body;
     const userId = req.user?.userId;
 
+    // Log coupon data for debugging
+    console.log('Order creation - Coupon data received:', { couponCode, couponDiscount });
+
     if (!userId) {
       return res.status(401).json({ error: 'Please login to place an order' });
     }
