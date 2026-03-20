@@ -153,7 +153,7 @@ export async function create(req, res, next) {
 // PUT /api/orders/:id (admin)
 export async function update(req, res, next) {
   try {
-    const { status, paymentStatus, adminNote } = req.body;
+    const { status, paymentStatus, adminNote, trackingNumber, courierCompany, trackingUrl } = req.body;
 
     // Get the current order to check if status is changing
     const currentOrder = await Order.findById(req.params.id).populate('userId', 'name email mobile');
@@ -164,6 +164,17 @@ export async function update(req, res, next) {
     if (status !== undefined) updateData.status = status;
     if (paymentStatus !== undefined) updateData.paymentStatus = paymentStatus;
     if (adminNote !== undefined) updateData.adminNote = adminNote;
+    if (trackingNumber !== undefined) updateData.trackingNumber = trackingNumber;
+    if (courierCompany !== undefined) updateData.courierCompany = courierCompany;
+    if (trackingUrl !== undefined) updateData.trackingUrl = trackingUrl;
+
+    // Set timestamps for shipping/delivery
+    if (status === 'SHIPPED' && oldStatus !== 'SHIPPED') {
+      updateData.shippedAt = new Date();
+    }
+    if (status === 'DELIVERED' && oldStatus !== 'DELIVERED') {
+      updateData.deliveredAt = new Date();
+    }
 
     const order = await Order.findByIdAndUpdate(
       req.params.id,
@@ -197,6 +208,47 @@ export async function remove(req, res, next) {
     const order = await Order.findByIdAndDelete(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
     res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/orders/track/:id (public - for customer tracking)
+export async function trackOrder(req, res, next) {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Return limited info for public tracking
+    res.json({
+      orderId: order._id,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      items: order.items.map(item => ({
+        productName: item.productName,
+        size: item.size,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
+      subtotal: order.subtotal,
+      deliveryCharge: order.deliveryCharge,
+      couponDiscount: order.couponDiscount,
+      totalAmount: order.totalAmount,
+      trackingNumber: order.trackingNumber,
+      courierCompany: order.courierCompany,
+      trackingUrl: order.trackingUrl,
+      shippedAt: order.shippedAt,
+      deliveredAt: order.deliveredAt,
+      createdAt: order.createdAt,
+      address: {
+        city: order.address?.city,
+        state: order.address?.state,
+        postalCode: order.address?.postalCode,
+      },
+    });
   } catch (err) {
     next(err);
   }

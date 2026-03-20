@@ -28,4 +28,7 @@ export const updateOrderSchema = Joi.object({
   status: Joi.string().valid('PENDING', 'CONFIRMED', 'PACKED', 'SHIPPED', 'DELIVERED', 'CANCELLED').optional(),
   paymentStatus: Joi.string().valid('PENDING', 'VERIFIED', 'REJECTED').optional(),
   adminNote: Joi.string().allow('', null).optional(),
+  trackingNumber: Joi.string().allow('', null).optional(),
+  courierCompany: Joi.string().allow('', null).optional(),
+  trackingUrl: Joi.string().allow('', null).optional(),
 });

@@ -7,6 +7,9 @@ import * as ctrl from '../controllers/orderController.js';
 
 const router = Router();
 
+// Public: track order (no auth needed)
+router.get('/track/:id', ctrl.trackOrder);
+
 // Admin: all orders
 router.get('/', authenticate, requireAuth, requireAdmin, ctrl.getAll);
 

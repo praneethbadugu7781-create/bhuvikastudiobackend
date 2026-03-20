@@ -166,6 +166,28 @@ export async function sendOrderStatusEmail(email, order, newStatus) {
           </div>
           ` : ''}
 
+          ${newStatus === 'SHIPPED' && order.trackingNumber ? `
+          <div style="margin-top:20px;padding:20px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:12px;color:#fff;">
+            <p style="font-size:12px;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px;opacity:0.8;">📦 Tracking Information</p>
+            <div style="background:rgba(255,255,255,0.15);border-radius:8px;padding:12px;margin-bottom:12px;">
+              <p style="margin:0 0 4px;font-size:12px;opacity:0.8;">Tracking Number</p>
+              <p style="margin:0;font-size:18px;font-weight:bold;letter-spacing:1px;">${order.trackingNumber}</p>
+            </div>
+            ${order.courierCompany ? `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <p style="margin:0 0 4px;font-size:12px;opacity:0.8;">Courier Partner</p>
+                <p style="margin:0;font-size:16px;font-weight:600;">${order.courierCompany}</p>
+              </div>
+              ${order.trackingUrl ? `<a href="${order.trackingUrl}" style="background:#fff;color:#764ba2;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Track Order →</a>` : ''}
+            </div>
+            ` : ''}
+          </div>
+          <div style="text-align:center;margin-top:16px;">
+            <a href="${process.env.FRONTEND_URL || 'https://bhuvikastudio.com'}/track?orderId=${orderId}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Track Your Order on Website</a>
+          </div>
+          ` : ''}
+
           <hr style="border:none;border-top:1px solid #f0f0f0;margin:24px 0 16px;" />
           <p style="color:#aaa;font-size:11px;text-align:center;margin:0;">
             Thank you for shopping with Bhuvika Studio!<br/>

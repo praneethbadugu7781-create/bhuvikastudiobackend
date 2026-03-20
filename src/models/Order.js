@@ -38,6 +38,12 @@ const orderSchema = new mongoose.Schema({
   razorpayOrderId: { type: String, default: null },
   adminNote:       { type: String, default: null },
   items:           [orderItemSchema],
+  // Shipping details
+  trackingNumber:  { type: String, default: null },
+  courierCompany:  { type: String, default: null },
+  trackingUrl:     { type: String, default: null },
+  shippedAt:       { type: Date, default: null },
+  deliveredAt:     { type: Date, default: null },
 }, {
   timestamps: true,
 });
