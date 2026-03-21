@@ -9,6 +9,12 @@ const variantSchema = Joi.object({
   stockQuantity: Joi.number().integer().min(0).default(0),
 });
 
+const colorOptionSchema = Joi.object({
+  colorName: Joi.string().required(),
+  colorCode: Joi.string().default('#000000'),
+  images: Joi.array().items(Joi.string().uri()).optional(),
+});
+
 export const createProductSchema = Joi.object({
   name: Joi.string().min(1).max(200).required(),
   slug: Joi.string().optional(),
@@ -20,6 +26,7 @@ export const createProductSchema = Joi.object({
   stockStatus: Joi.string().valid('IN_STOCK', 'OUT_OF_STOCK').default('IN_STOCK'),
   variants: Joi.array().items(variantSchema).optional(),
   images: Joi.array().items(Joi.string().uri()).optional(),
+  colorOptions: Joi.array().items(colorOptionSchema).optional(),
 });
 
 export const updateProductSchema = createProductSchema.fork(
