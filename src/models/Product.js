@@ -15,6 +15,12 @@ const imageSchema = new mongoose.Schema({
   displayRank: { type: Number, default: 0 },
 });
 
+const colorOptionSchema = new mongoose.Schema({
+  colorName:  { type: String, required: true },
+  colorCode:  { type: String, default: '#000000' }, // hex color for swatch
+  images:     [imageSchema],
+});
+
 const productSchema = new mongoose.Schema({
   slug:         { type: String, unique: true, required: true, lowercase: true },
   name:         { type: String, required: true },
@@ -26,6 +32,7 @@ const productSchema = new mongoose.Schema({
   stockStatus:  { type: String, enum: ['IN_STOCK', 'OUT_OF_STOCK'], default: 'IN_STOCK' },
   variants:     [variantSchema],
   images:       [imageSchema],
+  colorOptions: [colorOptionSchema], // NEW: color options with images
 }, {
   timestamps: true,
 });
