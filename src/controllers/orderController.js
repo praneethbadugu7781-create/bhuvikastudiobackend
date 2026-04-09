@@ -2,7 +2,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Coupon from '../models/Coupon.js';
 import Settings from '../models/Settings.js';
-import { getRazorpay } from '../utils/razorpay.js';
+import { createCashfreeOrder } from '../utils/cashfree.js';
 import { sendOrderStatusEmail } from '../utils/sendEmail.js';
 
 // Default shipping settings (fallback if not configured)
@@ -127,20 +127,30 @@ export async function create(req, res, next) {
       );
     }
 
-    // If Razorpay, create Razorpay order
-    if (paymentMethod === 'RAZORPAY') {
+    // If Cashfree, create Cashfree order
+    if (paymentMethod === 'CASHFREE') {
       try {
-        const razorpay = getRazorpay();
-        const rpOrder = await razorpay.orders.create({
-          amount: Math.round(totalAmount * 100),
-          currency: 'INR',
-          receipt: order._id.toString(),
+        const cfOrder = await createCashfreeOrder({
+          order_id: order._id.toString(),
+          order_amount: Math.round(totalAmount * 100) / 100,
+          order_currency: 'INR',
+          customer_details: {
+            customer_id: userId.toString(),
+            customer_name: address.fullName,
+            customer_email: address.email || 'noemail@example.com',
+            customer_phone: address.phone,
+          },
+          order_meta: {
+            return_url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/checkout?order_id=${order._id}`,
+            notify_url: `${process.env.API_URL || 'http://localhost:5000'}/api/payments/webhook`,
+          },
+          order_note: `Order from Bhuvika Studio - ${order._id}`,
         });
 
-        order.razorpayOrderId = rpOrder.id;
+        order.cashfreeOrderId = cfOrder.order_id;
         await order.save();
-      } catch (rpErr) {
-        console.error('Razorpay order creation failed:', rpErr.message);
+      } catch (cfErr) {
+        console.error('Cashfree order creation failed:', cfErr.message);
       }
     }
 

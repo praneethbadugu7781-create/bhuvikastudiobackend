@@ -26,7 +26,7 @@ const orderItemSchema = new mongoose.Schema({
 const orderSchema = new mongoose.Schema({
   userId:          { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   address:         { type: addressSnapshotSchema, required: true },
-  paymentMethod:   { type: String, enum: ['UPI', 'COD', 'RAZORPAY'], default: 'COD' },
+  paymentMethod:   { type: String, enum: ['UPI', 'COD', 'CASHFREE'], default: 'COD' },
   paymentStatus:   { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
   status:          { type: String, enum: ['PENDING', 'CONFIRMED', 'PACKED', 'SHIPPED', 'DELIVERED', 'CANCELLED'], default: 'PENDING' },
   subtotal:        { type: Number, required: true },
@@ -35,7 +35,7 @@ const orderSchema = new mongoose.Schema({
   deliveryCharge:  { type: Number, required: true },
   totalAmount:     { type: Number, required: true },
   paymentRef:      { type: String, default: null },
-  razorpayOrderId: { type: String, default: null },
+  cashfreeOrderId: { type: String, default: null },
   adminNote:       { type: String, default: null },
   items:           [orderItemSchema],
   // Shipping details

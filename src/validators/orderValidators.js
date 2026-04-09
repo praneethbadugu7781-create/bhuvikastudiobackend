@@ -14,7 +14,7 @@ export const createOrderSchema = Joi.object({
       'string.pattern.base': 'Invalid PIN code',
     }),
   }).required(),
-  paymentMethod: Joi.string().valid('UPI', 'COD', 'RAZORPAY').default('COD'),
+  paymentMethod: Joi.string().valid('UPI', 'COD', 'CASHFREE').default('COD'),
   items: Joi.array().items(Joi.object({
     slug: Joi.string().required(),
     size: Joi.string().required(),
