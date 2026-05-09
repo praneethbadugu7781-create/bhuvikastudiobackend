@@ -9,7 +9,7 @@ const router = Router();
 
 router.post('/send-otp', authLimiter, validate(sendOtpSchema), ctrl.sendOtp);
 router.post('/verify-otp', validate(verifyOtpSchema), ctrl.verifyOtp);
-router.post('/admin-login', authLimiter, validate(adminLoginSchema), ctrl.adminLogin);
+router.post('/admin-login', validate(adminLoginSchema), ctrl.adminLogin);
 router.post('/check-email', ctrl.checkEmail);
 router.post('/google', ctrl.googleAuth);
 router.get('/me', authenticate, ctrl.getMe);
