@@ -20,5 +20,7 @@ export const verifyOtpSchema = Joi.object({
 
 export const adminLoginSchema = Joi.object({
   email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
+  password: Joi.string().min(12).required().messages({
+    'string.min': 'Password must be at least 12 characters',
+  }),
 });

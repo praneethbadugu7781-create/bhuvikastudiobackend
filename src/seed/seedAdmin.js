@@ -31,8 +31,7 @@ async function seedAdmin() {
 
     console.log(`Admin user created successfully!`);
     console.log(`  Email: ${email}`);
-    console.log(`  Password: ${password}`);
-    console.log('  Change this password after first login!');
+    console.log('  ⚠️  Password set in environment variables - change after first login!');
 
     process.exit(0);
   } catch (err) {

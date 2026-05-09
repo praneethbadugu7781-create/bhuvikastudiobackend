@@ -8,11 +8,11 @@ const corsOptions = {
       process.env.FRONTEND_URL,
     ].filter(Boolean);
 
-    // Allow Vercel preview URLs
-    if (!origin || allowedOrigins.includes(origin) || origin.includes('vercel.app')) {
+    // Check if origin is allowed
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true); // Allow all for now to debug
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,

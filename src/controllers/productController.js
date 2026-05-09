@@ -71,9 +71,6 @@ export async function update(req, res, next) {
   try {
     const data = req.body;
 
-    console.log('=== UPDATE PRODUCT DEBUG ===');
-    console.log('Received colorOptions:', JSON.stringify(data.colorOptions, null, 2));
-
     // Transform images from string array to object array
     if (data.images && Array.isArray(data.images)) {
       data.images = transformImages(data.images);
@@ -86,7 +83,6 @@ export async function update(req, res, next) {
         colorCode: color.colorCode || '#000000',
         images: transformImages(color.images),
       }));
-      console.log('Transformed colorOptions:', JSON.stringify(data.colorOptions, null, 2));
     }
 
     const product = await Product.findByIdAndUpdate(
@@ -95,9 +91,6 @@ export async function update(req, res, next) {
       { new: true, runValidators: true }
     );
     if (!product) return res.status(404).json({ error: 'Product not found' });
-
-    console.log('Saved product colorOptions:', JSON.stringify(product.colorOptions, null, 2));
-    console.log('=== END DEBUG ===');
 
     res.json(product);
   } catch (err) {
