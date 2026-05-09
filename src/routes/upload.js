@@ -5,7 +5,7 @@ import { authenticate, requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/admin.js';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB limit
 
 // POST /api/upload — upload image to Cloudinary
 router.post('/', authenticate, requireAuth, requireAdmin, upload.single('image'), async (req, res, next) => {
