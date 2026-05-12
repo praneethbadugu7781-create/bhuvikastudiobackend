@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import Order from '../models/Order.js';
+import { sendOrderStatusEmail } from '../utils/sendEmail.js';
 
 // POST /api/payments/verify
 export async function verifyPayment(req, res, next) {
@@ -35,10 +36,16 @@ export async function verifyPayment(req, res, next) {
         order.paymentStatus = 'VERIFIED';
         order.status = 'CONFIRMED';
         order.paymentRef = razorpay_payment_id;
-        if (order.schema && order.schema.path('razorpayOrderId')) {
-            order.razorpayOrderId = razorpay_order_id;
-        }
+        order.razorpayOrderId = razorpay_order_id;
         await order.save();
+
+        // Send email notification automatically
+        const customerEmail = order.address?.email || (await order.populate('userId')).userId?.email;
+        if (customerEmail) {
+          sendOrderStatusEmail(customerEmail, order, 'CONFIRMED').catch(err => {
+            console.error('Failed to send order confirmation email:', err.message);
+          });
+        }
 
         return res.json({ success: true, order });
       } else {
