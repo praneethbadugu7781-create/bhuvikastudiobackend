@@ -6,7 +6,7 @@ export async function generateTokens(res, user) {
   const accessToken = jwt.sign(
     { userId: user._id.toString(), role: user.role },
     process.env.JWT_ACCESS_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: '30d' }
   );
 
   const tokenValue = crypto.randomUUID();
@@ -32,7 +32,7 @@ export async function generateTokens(res, user) {
     path: '/',
   };
 
-  res.cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
+  res.cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
   res.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 30 * 24 * 60 * 60 * 1000 });
 }
 
