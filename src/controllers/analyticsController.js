@@ -18,17 +18,24 @@ export async function getDashboard(_req, res, next) {
     ]);
 
     // Revenue calculations
+    const revenueMatch = { 
+      $or: [
+        { paymentStatus: 'VERIFIED' }, 
+        { status: { $in: ['CONFIRMED', 'PACKED', 'SHIPPED', 'DELIVERED'] } }
+      ] 
+    };
+
     const [thisMonthRevenue, lastMonthRevenue, totalRevenue] = await Promise.all([
       Order.aggregate([
-        { $match: { paymentStatus: 'VERIFIED', createdAt: { $gte: startOfMonth } } },
+        { $match: { ...revenueMatch, createdAt: { $gte: startOfMonth } } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } },
       ]),
       Order.aggregate([
-        { $match: { paymentStatus: 'VERIFIED', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+        { $match: { ...revenueMatch, createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } },
       ]),
       Order.aggregate([
-        { $match: { paymentStatus: 'VERIFIED' } },
+        { $match: { ...revenueMatch } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } },
       ]),
     ]);
@@ -88,7 +95,10 @@ export async function getSalesChart(req, res, next) {
       {
         $match: {
           createdAt: { $gte: startDate },
-          paymentStatus: 'VERIFIED',
+          $or: [
+            { paymentStatus: 'VERIFIED' }, 
+            { status: { $in: ['CONFIRMED', 'PACKED', 'SHIPPED', 'DELIVERED'] } }
+          ]
         },
       },
       {
@@ -103,7 +113,18 @@ export async function getSalesChart(req, res, next) {
       { $sort: { _id: 1 } },
     ]);
 
-    res.json(salesData);
+    // Fill missing dates with zero
+    const result = [];
+    const days = period === '30d' ? 30 : period === '90d' ? 90 : 7;
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const existing = salesData.find(s => s._id === dateStr);
+      result.push(existing || { _id: dateStr, revenue: 0, orders: 0 });
+    }
+
+    res.json(result);
   } catch (err) {
     next(err);
   }
