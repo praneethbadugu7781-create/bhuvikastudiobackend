@@ -103,8 +103,8 @@ export async function create(req, res, next) {
       userId,
       address,
       paymentMethod: paymentMethod || 'COD',
-      paymentStatus: 'PENDING',
-      status: 'PENDING',
+      paymentStatus: (paymentMethod === 'COD' || !paymentMethod) ? 'VERIFIED' : 'PENDING',
+      status: (paymentMethod === 'COD' || !paymentMethod) ? 'CONFIRMED' : 'PENDING',
       subtotal,
       couponCode: couponCode || null,
       couponDiscount: discount,
@@ -145,6 +145,14 @@ export async function create(req, res, next) {
         await order.save();
       } catch (cfErr) {
         console.error('Cashfree order creation failed:', cfErr.message);
+      }
+    }
+
+    // Send email for COD orders (since they are auto-confirmed)
+    if (paymentMethod === 'COD' || !paymentMethod) {
+      const customerEmail = address.email || (await order.populate('userId')).userId?.email;
+      if (customerEmail) {
+        sendOrderStatusEmail(customerEmail, order, 'CONFIRMED').catch(() => {});
       }
     }
 
