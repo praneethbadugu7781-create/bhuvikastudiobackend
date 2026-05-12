@@ -32,11 +32,29 @@ const productSchema = new mongoose.Schema({
   stockStatus:  { type: String, enum: ['IN_STOCK', 'OUT_OF_STOCK'], default: 'IN_STOCK' },
   variants:     [variantSchema],
   images:       [imageSchema],
-  colorOptions: [colorOptionSchema], // NEW: color options with images
+  colorOptions: [colorOptionSchema],
+  createdBy:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  updatedBy:    { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  deletedAt:    { type: Date, default: null },
 }, {
   timestamps: true,
 });
 
 productSchema.index({ featured: 1, isNewArrival: 1, isBestSeller: 1 });
+productSchema.index({ updatedAt: -1, updatedBy: 1 });
+
+productSchema.pre(/^find/, function() {
+  if (this.options._recursed) return;
+  this.where({ deletedAt: null });
+});
+
+productSchema.query.withDeleted = function() {
+  return this.where({});
+};
+
+productSchema.methods.softDelete = function() {
+  this.deletedAt = new Date();
+  return this.save();
+};
 
 export default mongoose.model('Product', productSchema);

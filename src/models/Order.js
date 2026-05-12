@@ -38,16 +38,33 @@ const orderSchema = new mongoose.Schema({
   cashfreeOrderId: { type: String, default: null },
   adminNote:       { type: String, default: null },
   items:           [orderItemSchema],
-  // Shipping details
   trackingNumber:  { type: String, default: null },
   courierCompany:  { type: String, default: null },
   trackingUrl:     { type: String, default: null },
   shippedAt:       { type: Date, default: null },
   deliveredAt:     { type: Date, default: null },
+  createdBy:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  updatedBy:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  deletedAt:       { type: Date, default: null },
 }, {
   timestamps: true,
 });
 
 orderSchema.index({ status: 1, paymentStatus: 1 });
+orderSchema.index({ updatedAt: -1, updatedBy: 1 });
+
+orderSchema.pre(/^find/, function() {
+  if (this.options._recursed) return;
+  this.where({ deletedAt: null });
+});
+
+orderSchema.query.withDeleted = function() {
+  return this.where({});
+};
+
+orderSchema.methods.softDelete = function() {
+  this.deletedAt = new Date();
+  return this.save();
+};
 
 export default mongoose.model('Order', orderSchema);

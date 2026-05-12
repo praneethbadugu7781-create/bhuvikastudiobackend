@@ -259,3 +259,99 @@ export async function googleAuth(req, res, next) {
     res.status(401).json({ error: 'Google authentication failed' });
   }
 }
+
+// POST /api/auth/verify-password - Verify password for destructive actions
+export async function verifyPassword(req, res, next) {
+  try {
+    const { password } = req.body;
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user || !user.password) {
+      return res.status(401).json({ error: 'Invalid user or password not set' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    import { generateReauthToken, setReauthCookie } from '../middleware/requireReauth.js';
+    const reauthToken = generateReauthToken(userId);
+    setReauthCookie(res, reauthToken);
+
+    res.json({ success: true, message: 'Password verified. Re-authentication valid for 5 minutes.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// DELETE /api/auth/account - Delete user account (with reauth)
+export async function deleteAccount(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    import { clearReauthCookie } from '../middleware/requireReauth.js';
+
+    await user.anonymize();
+    await RefreshToken.deleteMany({ userId });
+    clearReauthCookie(res);
+    clearTokenCookies(res);
+
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/export-data - Export user data (GDPR compliance, with reauth)
+export async function exportData(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const User = await import('../models/User.js').then(m => m.default);
+    const Order = await import('../models/Order.js').then(m => m.default);
+    const Review = await import('../models/Review.js').then(m => m.default);
+    const Address = await import('../models/Address.js').then(m => m.default);
+    const Wishlist = await import('../models/Wishlist.js').catch(() => null);
+
+    const user = await User.findById(userId).select('-password -googleId');
+    const orders = await Order.find({ userId });
+    const reviews = await Review.find({ userId });
+    const addresses = await Address.find({ userId });
+    const wishlists = Wishlist ? await Wishlist.find({ userId }) : [];
+
+    const exportData = {
+      profile: user,
+      orders,
+      reviews,
+      addresses,
+      wishlists,
+      exportDate: new Date().toISOString(),
+      note: 'This is your personal data export. You can use this to transfer to another service.',
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename=bhuvika-data-export.json');
+    res.json(exportData);
+  } catch (err) {
+    next(err);
+  }
+}

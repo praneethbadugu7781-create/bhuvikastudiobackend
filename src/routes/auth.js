@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requireAuth } from '../middleware/auth.js';
+import { requireReauth } from '../middleware/requireReauth.js';
 import { validate } from '../middleware/validate.js';
 import { authLimiter } from '../config/rateLimit.js';
 import { sendOtpSchema, verifyOtpSchema, adminLoginSchema } from '../validators/authValidators.js';
@@ -15,5 +16,10 @@ router.post('/google', ctrl.googleAuth);
 router.get('/me', authenticate, ctrl.getMe);
 router.post('/logout', ctrl.logout);
 router.post('/refresh', ctrl.refresh);
+
+// New routes for account security
+router.post('/verify-password', authenticate, requireAuth, authLimiter, ctrl.verifyPassword);
+router.delete('/account', authenticate, requireAuth, requireReauth, ctrl.deleteAccount);
+router.post('/export-data', authenticate, requireAuth, requireReauth, ctrl.exportData);
 
 export default router;
