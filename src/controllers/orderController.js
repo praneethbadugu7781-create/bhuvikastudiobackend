@@ -221,11 +221,8 @@ export async function remove(req, res, next) {
 export async function trackOrder(req, res, next) {
   try {
     const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
+    if (!order) return res.status(404).json({ error: 'Order not found' });
 
-    // Return limited info for public tracking
     res.json({
       orderId: order._id,
       status: order.status,
@@ -257,6 +254,29 @@ export async function trackOrder(req, res, next) {
     next(err);
   }
 }
+
+// POST /api/orders/track/:id/confirm (public)
+export async function confirmDelivery(req, res, next) {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (order.status !== 'SHIPPED') return res.status(400).json({ error: 'Only shipped orders can be confirmed' });
+
+    order.status = 'DELIVERED';
+    order.deliveredAt = new Date();
+    await order.save();
+
+    const customerEmail = order.userId?.email || order.address?.email;
+    if (customerEmail) {
+      sendOrderStatusEmail(customerEmail, order, 'DELIVERED').catch(() => {});
+    }
+
+    res.json({ success: true, status: 'DELIVERED' });
+  } catch (err) {
+    next(err);
+  }
+}
+
 
 // GET /api/orders/my-orders (customer - get their own orders)
 export async function getMyOrders(req, res, next) {
