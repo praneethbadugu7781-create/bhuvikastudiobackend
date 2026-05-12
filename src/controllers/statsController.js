@@ -10,7 +10,12 @@ export async function getStats(_req, res, next) {
       Order.countDocuments(),
       User.countDocuments({ role: 'CUSTOMER' }),
       Order.aggregate([
-        { $match: { $or: [{ paymentStatus: 'VERIFIED' }, { status: 'DELIVERED' }] } },
+        { $match: { 
+          $or: [
+            { paymentStatus: 'VERIFIED' }, 
+            { status: { $in: ['CONFIRMED', 'PACKED', 'SHIPPED', 'DELIVERED'] } }
+          ] 
+        } },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } },
       ]),
     ]);
