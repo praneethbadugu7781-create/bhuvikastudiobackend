@@ -36,6 +36,7 @@ const orderSchema = new mongoose.Schema({
   totalAmount:     { type: Number, required: true },
   paymentRef:      { type: String, default: null },
   cashfreeOrderId: { type: String, default: null },
+  razorpayOrderId: { type: String, default: null },
   adminNote:       { type: String, default: null },
   items:           [orderItemSchema],
   trackingNumber:  { type: String, default: null },

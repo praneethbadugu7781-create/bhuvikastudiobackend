@@ -6,6 +6,7 @@ import Otp from '../models/Otp.js';
 import RefreshToken from '../models/RefreshToken.js';
 import { generateTokens, clearTokenCookies } from '../utils/generateTokens.js';
 import { sendOtpEmail } from '../utils/sendEmail.js';
+import { generateReauthToken, setReauthCookie, clearReauthCookie } from '../middleware/requireReauth.js';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -280,7 +281,6 @@ export async function verifyPassword(req, res, next) {
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    import { generateReauthToken, setReauthCookie } from '../middleware/requireReauth.js';
     const reauthToken = generateReauthToken(userId);
     setReauthCookie(res, reauthToken);
 
@@ -303,8 +303,6 @@ export async function deleteAccount(req, res, next) {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-
-    import { clearReauthCookie } from '../middleware/requireReauth.js';
 
     await user.anonymize();
     await RefreshToken.deleteMany({ userId });
