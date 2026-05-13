@@ -10,6 +10,19 @@ export async function getAll(_req, res, next) {
   }
 }
 
+// GET /api/coupons/active (public)
+export async function getPublic(_req, res, next) {
+  try {
+    const coupons = await Coupon.find({ 
+      isActive: true,
+      validUntil: { $gte: new Date() }
+    }).sort({ createdAt: -1 });
+    res.json(coupons);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // POST /api/coupons (admin)
 export async function create(req, res, next) {
   try {

@@ -6,6 +6,7 @@ import * as ctrl from '../controllers/couponController.js';
 const router = Router();
 
 // Customer
+router.get('/active', ctrl.getPublic);
 router.post('/validate', ctrl.validate);
 
 // Admin

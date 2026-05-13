@@ -303,7 +303,7 @@ export async function getMyOrders(req, res, next) {
       status: o.status,
       totalAmount: o.totalAmount,
       createdAt: o.createdAt,
-      items: o.items.map(item => ({ productName: item.productName })),
+      items: o.items, // Return full items
     })));
   } catch (err) {
     next(err);
