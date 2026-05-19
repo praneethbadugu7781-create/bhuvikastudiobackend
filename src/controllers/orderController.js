@@ -231,17 +231,24 @@ export async function trackOrder(req, res, next) {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
 
+    // Fetch product details for images dynamically
+    const itemsWithImages = await Promise.all(order.items.map(async item => {
+      const product = await Product.findById(item.productId).select('images');
+      return {
+        productName: item.productName,
+        size: item.size,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        image: product?.images?.[0]?.imageUrl || null,
+      };
+    }));
+
     res.json({
       orderId: order._id,
       status: order.status,
       paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,
-      items: order.items.map(item => ({
-        productName: item.productName,
-        size: item.size,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-      })),
+      items: itemsWithImages,
       subtotal: order.subtotal,
       deliveryCharge: order.deliveryCharge,
       couponDiscount: order.couponDiscount,
@@ -298,13 +305,31 @@ export async function getMyOrders(req, res, next) {
       .sort({ createdAt: -1 })
       .limit(20);
 
-    res.json(orders.map(o => ({
-      _id: o._id,
-      status: o.status,
-      totalAmount: o.totalAmount,
-      createdAt: o.createdAt,
-      items: o.items, // Return full items
-    })));
+    const results = await Promise.all(orders.map(async o => {
+      const itemsWithImages = await Promise.all(o.items.map(async item => {
+        const product = await Product.findById(item.productId).select('images');
+        return {
+          productName: item.productName,
+          size: item.size,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          image: product?.images?.[0]?.imageUrl || null,
+        };
+      }));
+
+      return {
+        _id: o._id,
+        status: o.status,
+        paymentStatus: o.paymentStatus,
+        paymentMethod: o.paymentMethod,
+        totalAmount: o.totalAmount,
+        createdAt: o.createdAt,
+        items: itemsWithImages,
+      };
+    }));
+
+    res.json(results);
   } catch (err) {
     next(err);
   }
