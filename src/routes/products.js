@@ -9,6 +9,7 @@ const router = Router();
 
 // Public
 router.get('/', ctrl.getAll);
+router.post('/chat-stylist', ctrl.chatStylist);
 router.get('/:id', ctrl.getOne);
 
 // Admin protected
