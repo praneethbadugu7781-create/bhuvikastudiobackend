@@ -25,6 +25,7 @@ import reviewRoutes from './routes/reviews.js';
 import analyticsRoutes from './routes/analytics.js';
 import addressRoutes from './routes/addresses.js';
 import healthRoutes from './routes/health.js';
+import reelRoutes from './routes/reels.js';
 
 dotenv.config();
 
@@ -57,6 +58,7 @@ app.use('/api/banners', bannerRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/reels', reelRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found' });
