@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
+import { Readable } from 'stream';
 import cloudinary from '../config/cloudinary.js';
 import { authenticate, requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/admin.js';
@@ -60,14 +61,28 @@ router.post('/video', authenticate, requireAuth, requireAdmin, upload.single('vi
       return res.status(400).json({ error: 'No video file provided' });
     }
 
-    const b64 = req.file.buffer.toString('base64');
-    const dataUri = `data:${req.file.mimetype};base64,${b64}`;
+    const uploadStream = () => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'bhuvika-studio/videos',
+            resource_type: 'video',
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
 
-    const result = await cloudinary.uploader.upload(dataUri, {
-      folder: 'bhuvika-studio/videos',
-      resource_type: 'video',
-    });
+        const readable = new Readable();
+        readable._read = () => {};
+        readable.push(req.file.buffer);
+        readable.push(null);
+        readable.pipe(stream);
+      });
+    };
 
+    const result = await uploadStream();
     res.json({ url: result.secure_url, publicId: result.public_id });
   } catch (err) {
     next(err);

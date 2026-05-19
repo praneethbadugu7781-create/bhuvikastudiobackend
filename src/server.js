@@ -1,8 +1,8 @@
+import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import { initSentry } from './config/sentry.js';
 import corsOptions from './config/cors.js';
@@ -26,8 +26,6 @@ import analyticsRoutes from './routes/analytics.js';
 import addressRoutes from './routes/addresses.js';
 import healthRoutes from './routes/health.js';
 import reelRoutes from './routes/reels.js';
-
-dotenv.config();
 
 initSentry();
 
