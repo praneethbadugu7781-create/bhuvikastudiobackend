@@ -53,4 +53,25 @@ router.post('/multiple', authenticate, requireAuth, requireAdmin, upload.array('
   }
 });
 
+// POST /api/upload/video — upload video to Cloudinary
+router.post('/video', authenticate, requireAuth, requireAdmin, upload.single('video'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No video file provided' });
+    }
+
+    const b64 = req.file.buffer.toString('base64');
+    const dataUri = `data:${req.file.mimetype};base64,${b64}`;
+
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder: 'bhuvika-studio/videos',
+      resource_type: 'video',
+    });
+
+    res.json({ url: result.secure_url, publicId: result.public_id });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;
