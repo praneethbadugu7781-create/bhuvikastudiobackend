@@ -117,16 +117,20 @@ export async function chatStylist(req, res, next) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    const products = await Product.find({ stock: 'In Stock' });
+    const products = await Product.find({ stockStatus: 'IN_STOCK' });
 
-    const productsList = products.map(p => ({
-      name: p.name,
-      category: p.category,
-      price: p.price,
-      slug: p.slug,
-      color: p.color,
-      description: p.description || '',
-    }));
+    const productsList = products.map(p => {
+      const firstVariant = p.variants?.[0];
+      const price = firstVariant?.salePrice || firstVariant?.price || 0;
+      return {
+        name: p.name,
+        category: p.category,
+        price: price,
+        slug: p.slug,
+        color: firstVariant?.color || '',
+        description: p.description || '',
+      };
+    });
 
     const geminiKey = process.env.GEMINI_API_KEY;
     if (geminiKey) {
@@ -182,14 +186,15 @@ Do not return any markdown code block wraps (like \`\`\`json), just return the r
     }
 
     for (const p of products) {
+      const firstVariant = p.variants?.[0];
       const name = p.name.toLowerCase();
       const desc = (p.description || '').toLowerCase();
       const cat = p.category.toLowerCase();
-      const color = (p.color || '').toLowerCase();
+      const color = (firstVariant?.color || '').toLowerCase();
 
       let score = 0;
       if (color && lower.includes(color)) score += 3;
-      if (lower.includes(cat) || (cat === 'saree' && lower.includes('sarees'))) score += 2;
+      if (lower.includes(cat) || (cat === 'saree' && lower.includes('sarees')) || (cat === 'kids wear' && lower.includes('kids'))) score += 2;
       if (lower.includes(name)) score += 5;
       
       if (occasion === 'haldi ceremony' && (color.includes('yellow') || name.includes('yellow') || desc.includes('yellow'))) score += 4;
@@ -201,9 +206,15 @@ Do not return any markdown code block wraps (like \`\`\`json), just return the r
     }
 
     matched.sort((a, b) => b.score - a.score);
-    const recommendedSlugs = matched.slice(0, 3).map(m => m.slug);
+    let recommendedSlugs = matched.slice(0, 3).map(m => m.slug);
 
-    let reply = "Here are some handpicked outfits from our boutique that match your styling preference!";
+    if (recommendedSlugs.length === 0) {
+      const featured = products.filter(p => p.featured);
+      const pool = featured.length > 0 ? featured : products;
+      recommendedSlugs = pool.slice(0, 3).map(p => p.slug);
+    }
+
+    let reply = "Here are some of our most popular designer outfits that would look stunning on you!";
     if (occasion) {
       reply = `For your upcoming ${occasion}, here are some beautiful and elegant options from Bhuvika's designer collection!`;
     }
