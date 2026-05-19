@@ -28,7 +28,7 @@ export async function generateTokens(res, user) {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
-    sameSite: 'lax',
+    sameSite: isProduction ? 'none' : 'lax',
     path: '/',
   };
 

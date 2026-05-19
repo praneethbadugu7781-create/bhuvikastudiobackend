@@ -2,7 +2,12 @@ import jwt from 'jsonwebtoken';
 
 // Soft auth: sets req.user or null, never returns 401
 export function authenticate(req, _res, next) {
-  const token = req.cookies.accessToken;
+  let token = req.cookies.accessToken;
+
+  if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
   if (!token) {
     req.user = null;
     return next();

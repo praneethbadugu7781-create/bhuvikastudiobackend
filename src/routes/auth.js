@@ -15,7 +15,10 @@ router.post('/check-email', ctrl.checkEmail);
 router.post('/google', ctrl.googleAuth);
 router.get('/me', authenticate, ctrl.getMe);
 router.post('/logout', ctrl.logout);
-router.post('/refresh', ctrl.refresh);
+router.get('/token', authenticate, requireAuth, (req, res) => {
+  const token = req.cookies.accessToken;
+  res.json({ token });
+});
 
 // New routes for account security
 router.post('/verify-password', authenticate, requireAuth, authLimiter, ctrl.verifyPassword);
