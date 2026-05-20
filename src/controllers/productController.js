@@ -378,7 +378,18 @@ Do not return any markdown code block wraps (like \`\`\`json), just return the r
     const occasionText = matchedOccasions.length > 0 ? `for your ${matchedOccasions.join('/')} event` : "";
     const fabricText = matchedFabrics.length > 0 ? `crafted in premium ${matchedFabrics.join('/')}` : "";
 
-    if (matchedColors.length > 0 || matchedCategories.length > 0 || matchedOccasions.length > 0) {
+    if (products.length <= 1) {
+      const p = products[0];
+      const prodName = p ? p.name : "designer outfit";
+      const prodDesc = p ? (p.description || "premium clothing set").trim() : "";
+      
+      const singleReplies = [
+        `We are currently showcasing our exclusive signature piece, the ${prodName} (${prodDesc})! It is beautifully tailored and perfect for any special occasion. Let me know if you would like styling tips for this look!`,
+        `Bhuvika Studio is currently featuring our hand-crafted ${prodName} (${prodDesc}) as our boutique showcase today. It's a gorgeous outfit designed to stand out. How would you like to style this look?`,
+        `Take a look at our highlighted boutique capsule piece: the elegant ${prodName} (${prodDesc})! It features gorgeous details and is highly popular. Let me know if you have questions about sizing or pairing accessories for this!`
+      ];
+      reply = singleReplies[Math.floor(Math.random() * singleReplies.length)];
+    } else if (matchedColors.length > 0 || matchedCategories.length > 0 || matchedOccasions.length > 0) {
       const segments = [];
       if (colorsText) segments.push(colorsText);
       if (fabricText) segments.push(fabricText);
