@@ -51,6 +51,21 @@ export async function getDashboard(_req, res, next) {
       .sort({ createdAt: -1 })
       .limit(5);
 
+    // Return / Refund metrics
+    const [totalReturns, pendingReturns, totalRefunded] = await Promise.all([
+      Order.countDocuments({ returnStatus: { $ne: 'NONE' } }),
+      Order.countDocuments({ returnStatus: 'REQUESTED' }),
+      Order.aggregate([
+        { $match: { returnStatus: 'REFUNDED' } },
+        { $group: { _id: null, total: { $sum: '$refundAmount' } } },
+      ]),
+    ]);
+
+    const returnsByStatus = await Order.aggregate([
+      { $match: { returnStatus: { $ne: 'NONE' } } },
+      { $group: { _id: '$returnStatus', count: { $sum: 1 } } },
+    ]);
+
     res.json({
       totalOrders,
       totalProducts,
@@ -65,6 +80,10 @@ export async function getDashboard(_req, res, next) {
         delete obj.userId;
         return obj;
       }),
+      totalReturns,
+      pendingReturns,
+      totalRefunded: totalRefunded[0]?.total || 0,
+      returnsByStatus: returnsByStatus.reduce((acc, cur) => { acc[cur._id] = cur.count; return acc; }, {}),
     });
   } catch (err) {
     next(err);
@@ -209,6 +228,27 @@ export async function getCustomerStats(_req, res, next) {
       repeatCustomers: repeatCustomers[0]?.count || 0,
       topCustomers,
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/analytics/returns (admin)
+export async function getReturnStats(_req, res, next) {
+  try {
+    const returns = await Order.find({ returnStatus: { $ne: 'NONE' } })
+      .populate('userId', 'name email mobile')
+      .sort({ returnRequestedAt: -1 })
+      .limit(50);
+
+    const result = returns.map(o => {
+      const obj = o.toJSON();
+      obj.user = obj.userId;
+      delete obj.userId;
+      return obj;
+    });
+
+    res.json(result);
   } catch (err) {
     next(err);
   }

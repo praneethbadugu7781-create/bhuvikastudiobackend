@@ -264,6 +264,16 @@ export async function trackOrder(req, res, next) {
         state: order.address?.state,
         postalCode: order.address?.postalCode,
       },
+      returnStatus: order.returnStatus,
+      returnReason: order.returnReason,
+      returnRequestedAt: order.returnRequestedAt,
+      returnCourierCompany: order.returnCourierCompany,
+      returnTrackingNumber: order.returnTrackingNumber,
+      returnApprovedAt: order.returnApprovedAt,
+      returnReceivedAt: order.returnReceivedAt,
+      refundAmount: order.refundAmount,
+      refundNote: order.refundNote,
+      refundedAt: order.refundedAt,
     });
   } catch (err) {
     next(err);
@@ -325,11 +335,150 @@ export async function getMyOrders(req, res, next) {
         paymentMethod: o.paymentMethod,
         totalAmount: o.totalAmount,
         createdAt: o.createdAt,
+        deliveredAt: o.deliveredAt,
         items: itemsWithImages,
+        returnStatus: o.returnStatus,
+        returnReason: o.returnReason,
+        returnRequestedAt: o.returnRequestedAt,
+        returnCourierCompany: o.returnCourierCompany,
+        returnTrackingNumber: o.returnTrackingNumber,
+        returnApprovedAt: o.returnApprovedAt,
+        returnReceivedAt: o.returnReceivedAt,
+        refundAmount: o.refundAmount,
+        refundNote: o.refundNote,
+        refundedAt: o.refundedAt,
       };
     }));
 
     res.json(results);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/orders/:id/return (customer)
+export async function requestReturn(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Please login to request a return' });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    if (order.userId.toString() !== userId) {
+      return res.status(403).json({ error: 'Not authorised' });
+    }
+
+    if (order.status !== 'DELIVERED') {
+      return res.status(400).json({ error: 'Only delivered orders can be returned' });
+    }
+
+    if (!order.deliveredAt || (Date.now() - new Date(order.deliveredAt).getTime()) > 7 * 24 * 60 * 60 * 1000) {
+      return res.status(400).json({ error: 'Return window (7 days) has expired' });
+    }
+
+    if (order.returnStatus !== 'NONE') {
+      return res.status(400).json({ error: 'Return already requested or processed' });
+    }
+
+    order.returnStatus = 'REQUESTED';
+    order.returnReason = req.body.returnReason;
+    order.returnRequestedAt = new Date();
+    await order.save();
+
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// PUT /api/orders/:id/return-courier (customer)
+export async function updateReturnCourier(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Please login' });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    if (order.userId.toString() !== userId) {
+      return res.status(403).json({ error: 'Not authorised' });
+    }
+
+    if (order.returnStatus !== 'APPROVED') {
+      return res.status(400).json({ error: 'Return must be approved before adding courier info' });
+    }
+
+    order.returnCourierCompany = req.body.returnCourierCompany;
+    order.returnTrackingNumber = req.body.returnTrackingNumber;
+    await order.save();
+
+    res.json(order);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// PUT /api/orders/:id/return-action (admin)
+export async function adminReturnAction(req, res, next) {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    const { action } = req.body;
+
+    switch (action) {
+      case 'APPROVE':
+        if (order.returnStatus !== 'REQUESTED') {
+          return res.status(400).json({ error: 'Only requested returns can be approved' });
+        }
+        order.returnStatus = 'APPROVED';
+        order.returnApprovedAt = new Date();
+        break;
+
+      case 'REJECT':
+        if (order.returnStatus !== 'REQUESTED') {
+          return res.status(400).json({ error: 'Only requested returns can be rejected' });
+        }
+        order.returnStatus = 'REJECTED';
+        order.returnRejectedAt = new Date();
+        if (req.body.adminNote) order.adminNote = req.body.adminNote;
+        break;
+
+      case 'MARK_RECEIVED':
+        if (order.returnStatus !== 'APPROVED') {
+          return res.status(400).json({ error: 'Only approved returns can be marked received' });
+        }
+        order.returnStatus = 'RECEIVED';
+        order.returnReceivedAt = new Date();
+        break;
+
+      case 'REFUND':
+        if (order.returnStatus !== 'RECEIVED') {
+          return res.status(400).json({ error: 'Only received returns can be refunded' });
+        }
+        order.returnStatus = 'REFUNDED';
+        order.refundAmount = req.body.refundAmount || order.totalAmount;
+        order.refundNote = req.body.refundNote || null;
+        order.refundedAt = new Date();
+        break;
+
+      default:
+        return res.status(400).json({ error: 'Invalid action' });
+    }
+
+    await order.save();
+    await order.populate('userId', 'name email mobile');
+
+    const obj = order.toJSON();
+    obj.user = obj.userId;
+    delete obj.userId;
+
+    res.json(obj);
   } catch (err) {
     next(err);
   }

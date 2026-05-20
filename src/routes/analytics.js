@@ -12,5 +12,6 @@ router.get('/dashboard', ctrl.getDashboard);
 router.get('/sales', ctrl.getSalesChart);
 router.get('/best-sellers', ctrl.getBestSellers);
 router.get('/customers', ctrl.getCustomerStats);
+router.get('/returns', ctrl.getReturnStats);
 
 export default router;

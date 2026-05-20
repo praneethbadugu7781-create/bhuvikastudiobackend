@@ -47,12 +47,26 @@ const orderSchema = new mongoose.Schema({
   createdBy:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   updatedBy:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   deletedAt:       { type: Date, default: null },
+
+  // Return & Refund
+  returnStatus:         { type: String, enum: ['NONE', 'REQUESTED', 'APPROVED', 'REJECTED', 'RECEIVED', 'REFUNDED'], default: 'NONE' },
+  returnReason:         { type: String, default: null },
+  returnRequestedAt:    { type: Date, default: null },
+  returnCourierCompany: { type: String, default: null },
+  returnTrackingNumber: { type: String, default: null },
+  returnApprovedAt:     { type: Date, default: null },
+  returnRejectedAt:     { type: Date, default: null },
+  returnReceivedAt:     { type: Date, default: null },
+  refundAmount:         { type: Number, default: 0 },
+  refundNote:           { type: String, default: null },
+  refundedAt:           { type: Date, default: null },
 }, {
   timestamps: true,
 });
 
 orderSchema.index({ status: 1, paymentStatus: 1 });
 orderSchema.index({ updatedAt: -1, updatedBy: 1 });
+orderSchema.index({ returnStatus: 1 });
 
 orderSchema.pre(/^find/, function() {
   if (this.options._recursed) return;

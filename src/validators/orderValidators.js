@@ -32,3 +32,26 @@ export const updateOrderSchema = Joi.object({
   courierCompany: Joi.string().allow('', null).optional(),
   trackingUrl: Joi.string().allow('', null).optional(),
 });
+
+export const returnRequestSchema = Joi.object({
+  returnReason: Joi.string().min(10).max(500).required().messages({
+    'string.min': 'Return reason must be at least 10 characters',
+    'any.required': 'Return reason is required',
+  }),
+});
+
+export const returnCourierSchema = Joi.object({
+  returnCourierCompany: Joi.string().required().messages({
+    'any.required': 'Courier company is required',
+  }),
+  returnTrackingNumber: Joi.string().required().messages({
+    'any.required': 'Tracking number is required',
+  }),
+});
+
+export const adminReturnActionSchema = Joi.object({
+  action: Joi.string().valid('APPROVE', 'REJECT', 'MARK_RECEIVED', 'REFUND').required(),
+  refundAmount: Joi.number().min(0).optional(),
+  refundNote: Joi.string().allow('', null).optional(),
+  adminNote: Joi.string().allow('', null).optional(),
+});
