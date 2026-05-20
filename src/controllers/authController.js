@@ -353,3 +353,53 @@ export async function exportData(req, res, next) {
     next(err);
   }
 }
+
+// POST /api/auth/change-password - Change current user's password
+export async function changePassword(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!user.password) {
+      return res.status(400).json({ error: 'Password changes are only supported for credentials-based accounts' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Incorrect current password' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    user.password = hashedPassword;
+    await user.save();
+
+    // Log the password change action
+    try {
+      const AuditLog = await import('../models/AuditLog.js').then(m => m.default);
+      await AuditLog.create({
+        userId: user._id,
+        action: 'UPDATE',
+        targetModel: 'User',
+        targetId: user._id,
+        changes: { password: '[REDACTED]' },
+        ipAddress: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+        userAgent: req.headers['user-agent'] || 'unknown',
+      });
+    } catch (auditErr) {
+      console.error('Failed to log audit for password change:', auditErr.message);
+    }
+
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    next(err);
+  }
+}

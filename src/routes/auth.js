@@ -3,7 +3,7 @@ import { authenticate, requireAuth } from '../middleware/auth.js';
 import { requireReauth } from '../middleware/requireReauth.js';
 import { validate } from '../middleware/validate.js';
 import { authLimiter } from '../config/rateLimit.js';
-import { sendOtpSchema, verifyOtpSchema, adminLoginSchema } from '../validators/authValidators.js';
+import { sendOtpSchema, verifyOtpSchema, adminLoginSchema, changePasswordSchema } from '../validators/authValidators.js';
 import * as ctrl from '../controllers/authController.js';
 
 const router = Router();
@@ -22,6 +22,7 @@ router.get('/token', authenticate, requireAuth, (req, res) => {
 
 // New routes for account security
 router.post('/verify-password', authenticate, requireAuth, authLimiter, ctrl.verifyPassword);
+router.post('/change-password', authenticate, requireAuth, authLimiter, validate(changePasswordSchema), ctrl.changePassword);
 router.delete('/account', authenticate, requireAuth, requireReauth, ctrl.deleteAccount);
 router.post('/export-data', authenticate, requireAuth, requireReauth, ctrl.exportData);
 
