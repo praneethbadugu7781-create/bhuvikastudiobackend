@@ -15,12 +15,13 @@ async function seedAdmin() {
 
     // Check if admin already exists
     const existing = await User.findOne({ email, role: 'ADMIN' });
+    const hashedPassword = await bcrypt.hash(password, 12);
     if (existing) {
-      console.log(`Admin already exists: ${email}`);
+      existing.password = hashedPassword;
+      await existing.save();
+      console.log(`Admin already exists. Password updated successfully for: ${email}`);
       process.exit(0);
     }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
 
     await User.create({
       name: 'Bhuvika Admin',
