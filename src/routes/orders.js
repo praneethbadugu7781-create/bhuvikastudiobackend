@@ -27,6 +27,10 @@ router.get('/', authenticate, requireAuth, requireAdmin, ctrl.getAll);
 // Customer: place order
 router.post('/', authenticate, requireAuth, validate(createOrderSchema), ctrl.create);
 
+// Customer: cancel order (payment aborted/cancelled)
+router.post('/:id/cancel', authenticate, requireAuth, ctrl.cancelOrder);
+
+
 // Admin: update/delete
 router.put('/:id', authenticate, requireAuth, requireAdmin, validate(updateOrderSchema), ctrl.update);
 router.delete('/:id', authenticate, requireAuth, requireAdmin, ctrl.remove);

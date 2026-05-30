@@ -483,3 +483,39 @@ export async function adminReturnAction(req, res, next) {
     next(err);
   }
 }
+
+// POST /api/orders/:id/cancel (customer)
+export async function cancelOrder(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Please login' });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+
+    if (order.userId.toString() !== userId) {
+      return res.status(403).json({ error: 'Not authorised' });
+    }
+
+    // Only pending orders can be cancelled
+    if (order.status !== 'PENDING') {
+      return res.status(400).json({ error: 'Only pending orders can be cancelled' });
+    }
+
+    order.status = 'CANCELLED';
+    await order.save();
+
+    // Send email notification for cancellation
+    const customerEmail = order.address?.email || (await order.populate('userId')).userId?.email;
+    if (customerEmail) {
+      sendOrderStatusEmail(customerEmail, order, 'CANCELLED').catch(() => {});
+    }
+
+    res.json({ success: true, status: 'CANCELLED' });
+  } catch (err) {
+    next(err);
+  }
+}
+
