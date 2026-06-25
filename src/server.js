@@ -26,6 +26,7 @@ import analyticsRoutes from './routes/analytics.js';
 import addressRoutes from './routes/addresses.js';
 import healthRoutes from './routes/health.js';
 import reelRoutes from './routes/reels.js';
+import sizeChartRoutes from './routes/sizeCharts.js';
 
 initSentry();
 
@@ -57,6 +58,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/reels', reelRoutes);
+app.use('/api/size-charts', sizeChartRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found' });

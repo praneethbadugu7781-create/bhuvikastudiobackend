@@ -7,7 +7,8 @@
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
     "seed:admin": "node src/seed/seedAdmin.js",
-    "seed:reels": "node src/seed/seedReels.js"
+    "seed:reels": "node src/seed/seedReels.js",
+    "seed:size-charts": "node src/seed/seedSizeCharts.js"
   },
   "dependencies": {
     "@sentry/node": "^7.108.0",

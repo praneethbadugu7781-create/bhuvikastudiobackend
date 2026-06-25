@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import SizeChart from '../models/SizeChart.js';
 
 function slugify(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -7,8 +8,24 @@ function slugify(name) {
 // GET /api/products
 export async function getAll(req, res, next) {
   try {
-    const products = await Product.find().sort({ createdAt: -1 });
-    res.json(products);
+    const [products, sizeCharts] = await Promise.all([
+      Product.find().sort({ createdAt: -1 }),
+      SizeChart.find(),
+    ]);
+    const chartMap = {};
+    sizeCharts.forEach(sc => { chartMap[sc.category] = sc; });
+    const enriched = products.map(p => {
+      const obj = p.toObject();
+      if (!obj.sizeChart || obj.sizeChart.length === 0) {
+        const defaultChart = chartMap[obj.category];
+        if (defaultChart) {
+          obj.sizeChart = defaultChart.measurements;
+          obj.sizeChartType = defaultChart.type;
+        }
+      }
+      return obj;
+    });
+    res.json(enriched);
   } catch (err) {
     next(err);
   }
@@ -19,7 +36,15 @@ export async function getOne(req, res, next) {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
-    res.json(product);
+    const obj = product.toObject();
+    if (!obj.sizeChart || obj.sizeChart.length === 0) {
+      const defaultChart = await SizeChart.findOne({ category: obj.category });
+      if (defaultChart) {
+        obj.sizeChart = defaultChart.measurements;
+        obj.sizeChartType = defaultChart.type;
+      }
+    }
+    res.json(obj);
   } catch (err) {
     next(err);
   }
