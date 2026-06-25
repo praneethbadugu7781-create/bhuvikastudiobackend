@@ -16,6 +16,18 @@ export async function connectDB() {
         return ret;
       },
     });
+
+    // Global toObject transform: add `id` from `_id` for frontend compatibility
+    mongoose.set('toObject', {
+      virtuals: true,
+      transform: (_doc, ret) => {
+        if (ret._id) {
+          ret.id = ret._id.toString();
+        }
+        delete ret.__v;
+        return ret;
+      },
+    });
   } catch (err) {
     console.error('MongoDB connection error:', err.message);
     process.exit(1);
